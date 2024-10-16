@@ -1,7 +1,7 @@
 # location, month, month num, day, day of week, hour, minute
 import csv
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pytz import timezone, utc
 from timezonefinder import TimezoneFinder
 
@@ -9,21 +9,10 @@ from timezonefinder import TimezoneFinder
 tzf = TimezoneFinder()
 
 
-def get_offset(lat, lng):
-    """
-    returns a location's time zone offset from UTC in minutes.
-    
-    from Timezonefinder documentation, https://timezonefinder.readthedocs.io/en/latest/2_use_cases.html#getting-a-location-s-time-zone-offset
+def convertByTimezone(dt, lat, lng):
 
-    """
-
-    today = datetime.now()
-    tz_target = timezone(tf.certain_timezone_at(lng=lng, lat=lat))
-    # ATTENTION: tz_target could be None! handle error case
-    today_target = tz_target.localize(today)
-    today_utc = utc.localize(today)
-    return (today_utc - today_target).total_seconds() / 60
-
+    tz = timezone(tzf.certain_timezone_at(lng=float(lng), lat=float(lat)))
+    return dt.astimezone(tz)
 
 
 STATES = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Minor Outlying Islands", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Puerto Rico", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "U.S. Virgin Islands", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"]
@@ -162,8 +151,6 @@ def reformatLocationFile():
 	tmpLocs = []
 	with open('data/Location.csv', newline='') as csvfile:
 		cr = csv.reader(csvfile, delimiter=',', quotechar='"')
-		cw = csv.writer(open("data/location_clean.csv","w"))
-		cw.writerow(["location","locationType","state","lat","lon", "count"])
 		for row in cr:
 			loc = row[0]
 			locCount = locData[loc]["locCount"]
@@ -199,26 +186,84 @@ def reformatLocationFile():
 					# small location counts are not part of analysis data set
 					locType = "Place of Interest"
 				if locType != "":
-					cw.writerow([loc, locType,state,lat,lon,locCount])
+					locData[loc]["locType"] = locType
+					locData[loc]["state"] = state
+					locData[loc]["lat"] = lat
+					locData[loc]["lon"] = lon
+
 					tmpLocs.append(loc)
 
-
-def reformatIGFile():
-	# split up date
-	x = 1
-
-def mergeLocationIg():
-	# merge
-	x = 1
-
-def mergeTempIg():
-	# merge
-	x = 1
-
+temperatureData = {}
+def getTemperatureData():
+	with open('data/Temperature.csv', newline='') as csvfile:
+		cr = csv.reader(csvfile, delimiter=',', quotechar='"')
+		h = next(cr)
+		for row in cr:
+			state = row[0]
+			month = str(int(row[4]))
+			year = row[5]
+			temp = row[2]
+			temperatureData[state + "_" + year + "-" + month ] = temp
 
 
 
-# ig_reader = csv.reader()
+def buildBigTable():
+	with open('data/IG.csv', newline='') as csvfile:
+		cr = csv.reader(csvfile, delimiter=',', quotechar='"')
+		h = next(cr)
+		cw = csv.writer(open("data/lookerData.csv","w"))
+		cw.writerow(["location","locationType","state","lat","lon","month","year","dayOfWeek","hour","minute","temperature"])
+
+					# locData[loc]["locType"] = locType
+					# locData[loc]["state"] = state
+					# locData[loc]["lat"] = lat
+					# locData[loc]["lon"] = lon
+
+					# temperatureData[state + "_" + year + "-" + month ] = temp
+
+
+		for row in cr:
+
+			locRaw = row[0]
+			locObj = locData[locRaw]
+
+			if "locType" not in locObj:
+				continue
+
+			datetimeRaw = row[1]
+			# pop off the terminal "Z", indicating UTC time
+			dateObjRaw = datetime.fromisoformat(datetimeRaw[:-1])
+
+			location = locRaw
+			locationType = locObj["locType"]
+			state = locObj["state"]
+			lat = locObj["lat"]
+			lon = locObj["lon"]
+			dateObj = convertByTimezone(dateObjRaw, lat, lon)
+			# dateObj = dateObjRaw
+
+			# print(dateObj)
+
+			month = dateObj.month
+			year = dateObj.year
+			dayOfWeek = dateObj.strftime("%A")
+			dayOfWeekNum = dateObj.weekday()
+			hour = dateObj.hour
+			minute = dateObj.minute
+
+			temperatureKey = state + "_" + str(year) + "-" + str(month)
+			if(temperatureKey not in temperatureData):
+				continue
+
+			temperature = temperatureData[temperatureKey]
+
+			cw.writerow([location,locationType,state,lat,lon,month,year,dayOfWeek,dayOfWeekNum,hour,minute,temperature])
+
+
+
+
+
+
 locData = {}
 def createSingleTable():
 	# x = 1
@@ -232,15 +277,10 @@ def createSingleTable():
 				locData[loc]["locCount"] += 1
 
 	reformatLocationFile()
+	getTemperatureData()
+	buildBigTable()
 
 createSingleTable()
-
-	# start with IG
-	# 
-
-	# with open('eggs.csv', newline='') as csvfile:
-	#     spamreader = csv.reader(csvfile, delimiter=' ', quotechar='|')
-
 
 
 
