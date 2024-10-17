@@ -3,6 +3,7 @@ import csv
 import re
 import math
 from datetime import datetime, timezone
+from dateutil import tz
 from pytz import timezone, utc
 from timezonefinder import TimezoneFinder
 
@@ -11,8 +12,11 @@ tzf = TimezoneFinder()
 
 
 def convertByTimezone(dt, lat, lng):
-    tz = timezone(tzf.certain_timezone_at(lng=float(lng), lat=float(lat)))
-    return dt.astimezone(tz)
+	fromZone = tz.tzutc()
+	toZone = timezone(tzf.certain_timezone_at(lng=float(lng), lat=float(lat)))
+	dt = dt.replace(tzinfo=fromZone)
+	# return dt.astimezone(tz)
+	return dt.astimezone(toZone)
 
 
 STATES = ["Alabama", "Alaska", "American Samoa", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "District of Columbia", "Florida", "Georgia", "Guam", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Minor Outlying Islands", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Puerto Rico", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "U.S. Virgin Islands", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"]
