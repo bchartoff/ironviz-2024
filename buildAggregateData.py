@@ -38,6 +38,7 @@ with open('data/lookerData.csv', newline='') as csvfile:
 		dMax = max(pc["days"].values())
 		hMax = max(pc["hours"].values())
 
+
 		r  = row + [
 			float(pc["months"][month]/mMax),
 			float(pc["days"][day]/dMax),

@@ -14,8 +14,8 @@ tzf = TimezoneFinder()
 def convertByTimezone(dt, lat, lng):
 	fromZone = tz.tzutc()
 	toZone = timezone(tzf.certain_timezone_at(lng=float(lng), lat=float(lat)))
+	
 	dt = dt.replace(tzinfo=fromZone)
-	# return dt.astimezone(tz)
 	return dt.astimezone(toZone)
 
 
@@ -100,6 +100,7 @@ def buildBigTable():
 			year = dateObj.year
 			dayOfWeek = dateObj.strftime("%A")
 			dayOfWeekNum = dateObj.weekday()
+			dateNum = dateObj.day
 			hour = dateObj.hour
 			minute = dateObj.minute
 
@@ -109,7 +110,7 @@ def buildBigTable():
 
 			temperature = temperatureData[temperatureKey]
 
-			cw.writerow([location,locationType,locationParentType,state,lat,lon,datetimeRaw,month,year,dayOfWeek,dayOfWeekNum,hour,minute,temperature])
+			cw.writerow([location,locationType,locationParentType,state,lat,lon,datetimeRaw,month,year,dayOfWeek,dayOfWeekNum,hour,minute,dateNum])
 
 
 locData = {}
